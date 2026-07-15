@@ -45,7 +45,7 @@ from .train import (
     select_robust_features,
 )
 
-ROOT = Path("/root/Skip/poker/SN126/04_our_miner")
+ROOT = Path("/root/Skip/poker/SN126/04_our_miner_v7")
 ARTIFACTS = ROOT / "artifacts"
 ARCHIVE = ARTIFACTS / "archive"
 SERVING = ARTIFACTS / "serving_blend_v3.pkl"
@@ -119,7 +119,28 @@ def _evaluate(blend: ServingBlend, X_std, y_std, X_pool, y_pool) -> Dict:
     return out
 
 
+def _refuse_if_shared_artifact() -> None:
+    """v7 SHARES v3's model artifact by symlink -- retraining here is always wrong.
+
+    v7 is a serving-discipline arm: identical code and identical model to v3, differing
+    only in P44_POS_FRAC. That comparison is only meaningful while the two serve the SAME
+    model, which is why artifacts/serving_blend_v3.pkl is a symlink into 04_our_miner and
+    why v7 is deliberately absent from retrain_all.py's MINERS.
+
+    Promotion does `tmp.replace(SERVING)`, which would replace the SYMLINK with a real
+    file -- silently ending the sharing and letting v7's model drift from v3's, destroying
+    the experiment with no error. Fail loudly instead. Retrain v3; v7 follows for free.
+    """
+    if SERVING.is_symlink():
+        raise SystemExit(
+            "REFUSING to retrain v7: artifacts/serving_blend_v3.pkl is a symlink to v3's "
+            "artifact. v7 shares v3's model on purpose (only pos_frac differs). Retrain v3 "
+            "instead -- v7 picks the new model up automatically via the symlink."
+        )
+
+
 def run_cycle(*, dry_run: bool = False, skip_fetch: bool = False) -> Dict:
+    _refuse_if_shared_artifact()
     summary: Dict = {"started_at": dt.datetime.utcnow().isoformat() + "Z"}
 
     if skip_fetch:

@@ -44,7 +44,7 @@ def _captures_sig(real_dir: Path) -> str:
         return "empty"
     return _sig(*[(f.name, f.stat().st_size) for f in files])
 
-ROOT = Path("/root/Skip/poker/SN126/04_our_miner")
+ROOT = Path("/root/Skip/poker/SN126/04_our_miner_v7")
 CACHE = ROOT / "artifacts" / "feature_cache"
 SPLIT = "2026-07-10"  # train <= SPLIT, eval > SPLIT (same as uid227 comparison)
 CACHE_VERSION = "v2"  # bump when features.py changes
